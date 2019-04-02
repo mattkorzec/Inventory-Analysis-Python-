@@ -1,0 +1,271 @@
+##########################################################################
+# Load Packages
+##########################################################################
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+##########################################################################
+# Sales Summary
+##########################################################################
+
+# Import an excel file
+sales = pd.read_excel('SalesReport.xlsx')
+
+# Select columns
+d1 = sales[['AON or VIN', 'MY', 'Model', 'Color', 'MSRP', 'Dealer Cost', 'Finance Type',
+     'Transaction Date', 'SRC']]
+     
+# Rename columns
+d1.rename(
+  columns={
+    'MY' : 'Year',
+    'AON or VIN' : 'VIN'
+  }, inplace = True)
+
+# Replace NA's
+d1['SRC'].fillna('Okay',inplace = True)
+
+# filter only 'Okay' values
+d2 = d1[d1['SRC'] == 'Okay']
+
+# Drop the SRC column
+d2.drop('SRC', axis = 1, inplace = True)
+
+# Separate Color column into multiple columns
+new = d2["Color"].str.split(" / ", n = 2, expand = True)
+
+# Create new columns and fill them 
+d2["Exterior"] = new[0]
+d2["Interior"] = new[1]
+d2["Seat"] = new[2]
+
+# Drop the old column
+d2.drop(columns = ["Color"], inplace = True)
+
+# Model code replacement
+x = d2.replace({'Model' : { '17412F45': "Accent LE",
+'28402F45': "Sonata SE",
+'284H2F4P': "Sonata SE",
+'284J2F4P': "Sonata SEL",
+'284K2F4P': "Sonata Sport",
+'284L2F4P': "Sonata Limited",
+'284M2F45': "Sonata Limited 2.0T",
+'48412F45': "Elantra SE",
+'48422F45': "Elantra Value Edition",
+'48442F45': "Elantra SEL",
+'48462F45': "Elantra Limited",
+'64402A45': "Santa_FE SE 2.4 AWD",
+'64402F4S': "Santa_FE SE 2.4 FWD",
+'64422A45': "Santa_FE SEL 2.4 AWD",
+'64422F4S': "Santa_FE SEL 2.4 FWD",
+'64472A45': "Santa_FE Ultimate 2.4 AWD",
+'64482A45': "Santa_FE Limited 2.0T AWD",
+'84412A45': "Tucson SE AWD",
+'84412F45': "Tucson SE FWD",
+'844A2F45': "Tucson VALUE FWD",
+'844B2F45': "Tucson SEL FWD",
+'844B2F4S': "Tucson SEL FWD",
+'844D2A45': "Tucson Sport FWD",
+'844G2A45': "Tucson Limited AWD",
+'844H2A45': "Tucson Unlimited AWD",
+'D2542F45': "Elantra GT SPORT A/T",
+'F1353F45': "Veloster N",
+'Q0422F45': "Kona SEL FWD",
+'Q0452A45': "Kona Limited AWD",
+'64492A45': "Santa_FE Ultimate 2.0T AWD",
+'64462F45': "Santa_FE Limited 2.4 FWD",
+'28472F45': "Sonata Limited",
+'844B2A45': "Tucson SEL AWD",
+'J0412F65': "Santa_FE XL SE FWD",
+'J0482A65': "Santa_FE LTD ULT AWD",
+'N0502F4S': "IONIQ_Hybrid Blue",
+'N0522F4S': "IONIQ_Hybrid SEL",
+'N0542F4S': "IONIQ_Hybrid Limited",
+'G1402F45': "Sonata Hybrid SE",
+'B2402A65': "G80 AWD 3.8",
+'F1322F45': "Veloster 2.0 Premium",
+'17442F45': "Accent SEL",
+'64442F45': "Santa_FE SEL PLUS 2.4 FWD",
+'64442A45': "Santa_FE SEL PLUS 2.4 AWD",
+'64492A45': "Santa_FE Ultimate 2.0T AWD",
+'64482F45': "Santa_FE Limited 2.0T FWD",
+'64472F45': "Santa_FE Ultimate 2.4 FWD",
+'64462A45': "Santa_FE Limited 2.4 AWD",
+'47442F45': "Elantra SEL",
+'47422F45': "Elantra Value Edition",
+'284G2F45': "Sonata Limited 2.0T",
+'64492F45': "Santa_FE Ultimate 2.0T FWD",
+'284B2F45': "Sonata SEL",
+'284E2F45': "Sonata Sport",
+'284F2F45': "Sonata Limited",
+'844E2A45': "Tucson VALUE AWD",
+'844C2F45': "Tucson SEL PLUS FWD",
+'Q0402F45': "Kona SE FWD",
+'Q0432F45': "Kona SEL FWD - Contrast Roof",
+'844E2F45': "Tucson VALUE FWD",
+'48413F45': "Elantra M/T",
+'844H2F4S': "Tucson Ultimate FWD",
+'844D2F4S': "Tucson Sport FWD",
+'844A2A45': "Tucson Value AWD",
+'Q0422A45': "Kona SEL AWD",
+'Q0472A45': "Kona Ultimate AWD",
+'J0412A65': "Santa_FE XL SE AWD",
+'J0482F65': "Santa_FE XL LTD ULT FWD",
+'J0422A65': "Santa_FE SE ULT AWD",
+'P0542F4P': "IONIQ_Hybrid Plug-In Limited",
+'G1432F45': "Sonata Hybrid Limited",
+'D2522F45': "Elantra GT A/T",
+'F1302F45': "Veloster 2.0",
+'F1362F45': "Veloster Turbo",
+'Q0452F45': "Kona Limited FWD",
+'Q0472F45': "Kona Ultimate FWD",
+'63462F45': "Santa_FE Sport 2.0T ULT FWD",
+'28432F45': "Sonata Sport 2.0T",
+'284C2F45': "Sonata Sport",
+'284F2F4P': "Sonata Limited",
+'284D2F45': "Sonata SEL",
+'844G2F45': "Tucson Limited FWD",
+'J0422F65': "Santa_FE SE ULT FWD",
+'48472F45': "Elantra Sport",
+'B2432R65': "G80 RWD 3.3T Sport",
+'F1303F45': "Veloster 2.0 M/T",
+'F1343F45': "Veloster R-SPEC",
+'F1383F45': "Veloster Turbo Ultimate M/T",
+'F1382F45': "Veloster Turbo Ultimate",
+'28492F45': "Sonata ECO",
+'844F2A45': "Tucson Night AWD",
+'844G2F4S': "Tucson Limited FWD",
+'B2402R65': "G80 RWD 3.8",
+'17462F45': "Accent Limited",
+'284D2F4P': "Sonata SEL SULEV",
+'844F2F4S': "Tucson Night FWD",
+'48432F45': "Elantra ECO",
+                          }})
+                          
+# Exterior code replacement
+x = x.replace({'Exterior' : { 'U4G': "GRAY",
+'R4R': "RED",
+'W4Y': "BEIGE",
+'4SS': "SILVER",
+'ABP': "BLACK",
+'B2R': "BLUE",
+'S3B': "BLACK",
+'WW8': "WHITE",
+'Y2B': "BROWN",
+'ST2': "BLUE",
+'R2F': "RAINFOREST",
+'S2C': "GRAY",
+'PR3': "RED",
+'YR2': "ORANGE",
+'2C': "GRAY",
+'Y8': "SILVER",
+'S3': "BLACK",
+'VU': "BLUE",
+'W8': "WHITE",
+'PR': "RED",
+'US': "BLUE",
+'NKA': "BLACK",
+'PDW': "WHITE",
+'M8N': "BROWN",
+'T8T': "SILVER",
+'TW3': "WHITE",
+'R5R': "RED",
+'Z5G': "GRAY",
+'XB3': "BLUE",
+'MZH': "BLACK",
+'Z3U': "BLUE",
+'P6W': "WHITE",
+'YG7': "GRAY",
+'YAC': "WHITE",
+'RB5': "BLACK",
+'P2S': "IRON FROST",
+'M8S': "SILVER",
+'YT3': "GRAY",
+'N9V': "SILVER",
+'N5M': "GRAY",
+'Y8S': "SILVER",
+'R2U': "BLUE",
+'R5U': "BLUE",
+'Y2R': "RED",
+'SS7': "SILVER",
+'SS1': "SILVER",
+'Y21': "RED",
+'W9Y': "LIME",
+'T8S': "SILVER",
+'WAW': "WHITE",
+'YP5': "BLUE",
+'UYS': "GRAY",
+'WC9': "WHITE",
+'NU9': "BLUE",
+'U9G': "GRAY",
+'SWP': "WHITE",
+'TA9': "ORANGE",
+'MFR': "RED",
+'TU9': "BLUE",
+'T5K': "BLACK",
+'YW6': "WHITE",
+'YB6': "BLACK",
+'W9U': "GRAY",
+'N4B': "BLUE",
+'YN9': "BROWN",
+'PR2': "RED",
+'MJB': "BLACK",
+                            }})
+                            
+# Interior code replacement
+x = x.replace({'Interior' : { 'TRY': "BLACK",
+'XUG': "BEIGE",
+'YPJ': "GRAY",
+'NN1': "BLACK",
+'UUE': "BEIGE",
+'C1': "BLACK",
+'P1': "GRAY",
+'CT': "BLACK",
+'GG': "GRAY",
+'BB': "BEIGE",
+'TGG': "GRAY",
+'YAK': "BEIGE",
+'LGY': "BLACK",
+'X1': "BEIGE",
+'NNB': "BLACK",
+'VYN': "BEIGE",
+'RYN': "BLACK",
+'VFG': "GRAY",
+'YGE': "BEIGE",
+'T9Y': "BLACK",
+'RRY': "BLACK",
+'PK': "GRAY",
+'TR1': "BLACK",
+'PPB': "BEIGE",
+'PGG': "GRAY",
+'SG2': "BLACK",
+'RJS': "GRAY",
+'XA': "BEIGE",
+'PKG': "GRAY",
+                            }})
+
+
+# Replace Codes for Seats
+x = x.replace({'Seat' : {'BLACK W/ LIME': "BLACK"}})
+
+# Add a dealership column
+x['Dealership'] = "FL123"
+
+# Separate Model into model and trim
+temp = x["Model"].str.split(" ", n = 1, expand = True)
+
+# Drop the old column
+x.drop(columns = ["Model"], inplace = True)
+
+# Create new columns and fill them 
+x["Model"] = temp[0]
+x["Trim"] = temp[1]
+
+# Reorder Columns
+x = x[['VIN', 'Year', 'Model', 'Trim', 'Exterior', 'Interior', 'Seat',
+      'MSRP', 'Dealer Cost', 'Finance Type', 'Transaction Date', 'Dealership']]
+      
+x.to_excel('Sample.xlsx', sheet_name = 'Raw Data', index = False)
