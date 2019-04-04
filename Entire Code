@@ -269,3 +269,75 @@ x = x[['VIN', 'Year', 'Model', 'Trim', 'Exterior', 'Interior', 'Seat',
       'MSRP', 'Dealer Cost', 'Finance Type', 'Transaction Date', 'Dealership']]
       
 x.to_excel('Sample.xlsx', sheet_name = 'Raw Data', index = False)
+
+
+##########################################################################
+# Inventory
+##########################################################################
+
+# Import Excel file
+inv = pd.read_excel('fl123-inventory.xlsx')
+
+# Filter out unwanted data rows
+inv = inv[inv['Series'].str.startswith("20")]
+
+# Replace names with a correct ones
+inv.Series.replace({'SANTA FE':'SANTA_FE', 
+                   'IONIQ HYBRID':'IONIQ_HYBRID'},
+                   regex=True, inplace = True)
+                   
+# Select columns
+inv = inv[['Series', 'Avg Mth Sales', 'Dealer Stock', 'D/S', 'ETA in 30 Days',
+           'ETA in 60 Days', 'ETA in 60+ Days', 'Total Avail']]
+
+# Separate Color column into multiple columns
+temp = inv["Series"].str.split(" ", n = 3, expand = True)
+
+# Create new columns and fill them 
+inv["Year"] = temp[0]
+inv["Model"] = temp[2]
+inv["Trim"] = temp[3]
+
+# Drop a column
+inv.drop('Series', axis = 1, inplace=True)
+
+# Rename columns
+inv.rename(
+  columns={
+    'Avg Mth Sales' : 'Average',
+    'Total Avail' : 'Total'
+  }, inplace = True)
+  
+# New Columns
+inv['Expected_Sales'] = inv['Average']*3
+
+inv['Action'] = inv['Expected_Sales'] - inv['Total']
+
+# Change Object to Integer to perform calculations
+inv['Year'] = inv['Year'].astype(str).astype(int)
+
+# Add a new column based on multiple conditions
+conditions = [
+    (inv['Year'] > 2018) & (inv['Total'] == 0),
+    (inv['Year'] < 2019)]
+
+choices = ['None in Stock or Transit', 'Older Model']
+inv['Warning'] = np.select(conditions, choices, default = '')
+
+# Rename columns
+inv.rename(
+  columns={
+    'Dealer Stock' : 'Stock',
+    'ETA in 30 Days' : '30 Days',
+      'ETA in 60 Days' : '60 Days',
+      'ETA in 60+ Days' : 'Over 60 Days',
+      'Action' : 'Status'
+  }, inplace = True)
+  
+# Reorder columns
+inv = inv[['Year', 'Model', 'Trim', 'Stock', 'D/S', '30 Days', '60 Days', 
+          'Over 60 Days', 'Total', 'Average', 'Expected_Sales', 'Status', 'Warning']]
+          
+# Export to Excel file
+inv.to_excel('Inventory-fl123.xlsx', sheet_name = 'Inventory', index = False)
+
